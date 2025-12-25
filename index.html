@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深求对话应用</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="chat-container">
+    <header class="chat-header">
+      <h1><i class="fas fa-robot"></i> 深求对话助手</h1>
+      <div class="header-info">
+        <span class="status-indicator online"></span>
+        <span>已连接</span>
+      </div>
+    </header>
+    
+    <div class="chat-window">
+      <div class="chat-messages" id="chatMessages">
+        <!-- 消息会在这里动态生成 -->
+        <div class="message bot">
+          <div class="message-content">
+            你好！我是深求助手。有什么我可以帮助您的吗？
+          </div>
+        </div>
+      </div>
+      
+      <div class="chat-input-area">
+        <textarea id="messageInput" placeholder="输入您的消息..." rows="3"></textarea>
+        <button id="sendButton" onclick="sendMessage()">
+          <i class="fas fa-paper-plane"></i> 发送
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let conversationHistory = [];
+
+    function addMessage(content, isUser = false) {
+      const chatMessages = document.getElementById('chatMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+      
+      messageDiv.innerHTML = `
+        <div class="message-header">
+          <span class="avatar">
+            ${isUser ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>'}
+          </span>
+          <span class="sender">${isUser ? '用户' : '深求助手'}</span>
+          <span class="timestamp">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <div class="message-content">
+          ${content}
+        </div>
+      `;
+      
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      
+      if (!message) {
+        alert('请输入消息内容！');
+        return;
+      }
+      
+      // 添加用户消息
+      addMessage(message, true);
+      input.value = '';
+      
+      try {
+        const response = await fetch('http://192.168.2.66:3001/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP错误: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        addMessage(data.response, false);
+        
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        addMessage('抱歉，消息发送失败，请检查网络连接！', false);
+      }
+    }
+  </script>
+</body>
+</html>
